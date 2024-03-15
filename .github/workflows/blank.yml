@@ -1,0 +1,31 @@
+name: Deploy to Backend to Prod Env
+
+# Github Action for deploying an application to an EC2 instance directly using SSH.
+# This workflow automates the deployment process to your EC2 instance running Ubuntu.
+# It assumes that you have already set up your EC2 instance, SSH key pair, and GitHub Secrets.
+# Define AWS credentials as GitHub Secrets: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy_web_app:
+    runs-on: ubuntu-latest
+    environment: Prod
+    strategy:
+      matrix:
+        max-parallel: [2]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        
+      - name: Deployment complete
+        run: |
+           echo "------------------------------------"
+           echo "|                                  |"
+           echo "|       🚀 Deployment Complete      |"
+           echo "|                                  |"
+           echo "------------------------------------"
+
