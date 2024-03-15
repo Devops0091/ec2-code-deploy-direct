@@ -4,10 +4,19 @@ name: Deploy to Backend to Prod Env
 # This workflow automates the deployment process to your EC2 instance running Ubuntu.
 # It assumes that you have already set up your EC2 instance, SSH key pair, and GitHub Secrets.
 # Define AWS credentials as GitHub Secrets: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+
+
+# Environment Variables Needed:
+# - AWS_ACCESS_KEY_ID: Your AWS access key ID
+# - AWS_SECRET_ACCESS_KEY: Your AWS secret access key
+# - SSH_PRIVATE_KEY: Your SSH private key used for authentication with the EC2 instance
+# - SSH_HOST: The hostname or IP address of your EC2 instance
+
+
 on:
   push:
     branches:
-      - main
+      - prod
 
 jobs:
   deploy_web_app:
@@ -21,6 +30,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
         
+      - name: Add public IP to AWS security group for Web App
+        uses: sohelamin/aws-security-group-add-ip-action@master
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'
+          aws-security-group-id: 'sg-009af37a2d44bf563'
+          port: '22'
+          to-port: '22'
+          protocol: 'tcp'
+          description: 'GitHub Action'
+
+      - name: Configure SSH for Web App
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "StrictHostKeyChecking no" > ~/.ssh/config
+
+      - name: Deploy code to Web App
+        run: |
+          ssh ubuntu@${{ secrets.SSH_HOST }} "cd /home/ubuntu/app && git stash && git pull && docker-compose -f docker-compose-nginx.yml up -d --build"
+
       - name: Deployment complete
         run: |
            echo "------------------------------------"
@@ -28,4 +60,3 @@ jobs:
            echo "|       🚀 Deployment Complete      |"
            echo "|                                  |"
            echo "------------------------------------"
-
